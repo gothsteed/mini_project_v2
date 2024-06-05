@@ -1,91 +1,51 @@
 package main;
 
-import java.util.Scanner;
-
+import auth.AuthService;
+import auth.AuthenticationManager;
 import controller.CompanyController;
 import controller.EmployeeController;
-import controller.hss.HssComanyCtrl;
-import controller.hss.HssEmployeeCtrl;
-import dbConnect.MyDBConnection;
+import controller.MainController;
+import model.*;
+import reader.Reader;
+import service.CompanyLoginService;
+import service.CompanyService;
+import service.EmployeeLoginService;
+import service.EmployeeService;
 
-
-
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
 public class Main {
+    public static void main(String[] args) {
+        CompanyDao companyDao = new CompanyDaoImple();
+        EmployeeDao employeeDao = new EmployeeDaoImple();
+        RecruitDao recruitDao = new RecruitDaoImple();
+        ApplicationDao applicationDao = new ApplicationDaoImple();
+        Reader reader = new Reader(new Scanner(System.in));
 
-	public static void main(String[] args) {
-		
-		Scanner sc = new Scanner(System.in);
-		
-		
-		CompanyController companyController = new CompanyController();
-		EmployeeController employeeController = new EmployeeController();
-		HssComanyCtrl HssComanyCtrl = new HssComanyCtrl();
-		HssEmployeeCtrl HssEmployeeCtrl = new HssEmployeeCtrl();
-		
-		String menuNo = "";
+        AuthService empAuth = new EmployeeLoginService(employeeDao);
+        AuthService compAuth = new CompanyLoginService(companyDao);
+        Map<String, AuthService> serviceMap = new HashMap<>();
+        serviceMap.put("company", compAuth);
+        serviceMap.put("employee", empAuth);
 
-		System.out.println("sadfdsafasf");
-		boolean isRunning = true; 
-		while(isRunning) {
-			
-			System.out.println(">>-----구인사이트 시작메뉴-----<<");
-			System.out.println("1. 구직자 회원가입      2. 구인회사 회원가입      3.구직자 로그인      4. 구인회사 로그인   5. 구직자 아이디, 비밀번호 찾기   6.구인회사 아이디, 비밀번호 찾기     7.프로그램종료");
-			System.out.println("-----------------------------------------------------------------------------------------");
-			
-			System.out.print("메뉴번호 선택 : ");
-			menuNo = sc.nextLine();
-			
-			switch (menuNo) {
-			case "1":
-				employeeController.register(sc);
-				
-				break;
-				
-			case "2":
-				
-				companyController.register(sc);
-		
-				break;
+        AuthenticationManager authenticationManager = new AuthenticationManager(serviceMap, null);
 
-				
-			case "3":
-				employeeController.login(sc);
-				break;
 
-				
-			case "4":
-				
-				companyController.login(sc);
-				break;
+        CompanyService companyService = new CompanyService(employeeDao, companyDao, recruitDao, applicationDao);
+        EmployeeService employeeService = new EmployeeService(employeeDao, companyDao, recruitDao, applicationDao);
 
-				
-			case "5"://구직자 
-				HssEmployeeCtrl.empIdPasswdSearch(sc);
-				break;
-				
-			case "6": //구인회사 아이디/비번찾기 메뉴
-				HssComanyCtrl.compIdPasswdSearch(sc);
-				break;
-				
-			case "7"://program shutdown
-				isRunning = false;
-				MyDBConnection.closeConnection();
-				break;
- 				
-				
-				
-			default:
-				System.out.println("-----------!!올바른 메뉴번호를 입력해 주세요!!!-----------");
-				
-				break;
-			}
-			
-			
-		}
-		
-		System.out.println("-----프로그램 종료-----");
 
-	}
 
+
+        CompanyController companyController = new CompanyController(companyService, employeeService, reader, authenticationManager);
+        EmployeeController employeeController = new EmployeeController(companyService, employeeService ,reader, authenticationManager);
+        MainController mainController = new MainController(companyService, employeeService, employeeController, companyController, reader, authenticationManager);
+
+
+
+
+        mainController.mainMenu();
+    }
 }
